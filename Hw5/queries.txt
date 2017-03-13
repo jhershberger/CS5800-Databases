@@ -1,0 +1,42 @@
+CS5800 couchDb/MapReduce
+Justin Hershberger
+A01381222
+12/10/16
+
+{
+  "_id": "_design/query1",
+  "_rev": "117-4b5ec8bd8c477810174d4c052b6de9ce",
+  "views": {
+	---- 1) count randomArrayItem
+    "Query1": {
+      "map": "function(doc) {\n  if(doc.data) {\n    for (var i in doc.data) {\n      emit(doc.data[i].randomArrayItem, 1);\n    }\n  }\n}",
+      "reduce": "function (keys, values) {\n  return sum(values);\n}"
+    },
+	---- 2) Names of the persons with the max age for their gender and whether they're active or not
+    "Query2": {
+      "map": "function (doc) {\n  var mmax_act = -Infinity;\n  var fmax_act = -Infinity;\n  var mmax_inact = -Infinity;\n  var fmax_inact = -Infinity;\n  for (var i in doc.data) {\n    var person = doc.data[i];\n    if(person.gender == \"male\" && person.isActive == true){\n      mmax_act = Math.max(mmax_act, person.age);\n    } else if (person.gender == \"female\" && person.isActive == true){\n      fmax_act = Math.max(fmax_act, person.age);\n    } else if(person.gender == \"male\" && person.isActive == false) {\n      mmax_inact = Math.max(mmax_inact, person.age);\n    } else if(person.gender == \"female\" && person.isActive == false){\n      fmax_inact = Math.max(fmax_inact, person.age);\n    }\n  }\n  for (var i in doc.data){\n    var p = doc.data[i];\n    if(p.gender == \"male\" && p.isActive && p.age == mmax_act){\n      emit({gender: p.gender, active: p.isActive}, {age: p.age, name: p.name});\n    } else if(p.gender == \"male\" && !p.isActive && p.age == mmax_inact){\n      emit({gender: p.gender, active: p.isActive}, {age: p.age, name: p.name});\n    } else if(p.gender == \"female\" && p.isActive && p.age == fmax_act){\n      emit({gender: p.gender, active: p.isActive}, {age: p.age, name: p.name});\n    } else if(p.gender == \"female\" && !p.isActive && p.age == fmax_inact){\n      emit({gender: p.gender, active: p.isActive}, {age: p.age, name: p.name});\n    }\n  }\n\n}",
+      "reduce": "function (keys, values, rereduce) {\n  return values;\n}"
+    },
+	---- 3) a count of people by tags
+    "Query3": {
+      "map": "function (doc) {\n  for(var i in doc.data){\n    var person = doc.data[i];\n    for(var t in person.tags) {\n      emit(person.tags[t], person.name );\n    }\n  }\n}",
+      "reduce": "_count"
+    },
+	---- 4) average age of people by company
+    "Query4": {
+      "map": "function (doc) {\n  for(var i in doc.data){\n    var person = doc.data[i];\n    emit(person.company, person.age);\n  }\n}",
+      "reduce": "function (keys, values, rereduce) {\n  return (sum(values) / values.length).toFixed(2);\n}"
+    }
+	---- 5) JSON of latitude, longitude, address where latitude > 80
+    "Query5": {
+      "map": "function (doc) {\n  for(var i in doc.data) {\n    var person = doc.data[i];\n    if(person.latitude >= 80.0){\n      emit(person.id, {latitude: person.latitude, longitude: person.longitude, address: person.address});\n    }\n  }\n}",
+      "reduce": "function (keys, values, rereduce) {\n return values[0];\n}"
+    },
+	---- 6) names of people and their friends whose name starts with J
+    "Query6": {
+      "map": "function (doc) {\n  for(var i in doc.data){\n    var p = doc.data[i];\n    for(var el in p.friends){\n      if(p.friends[el].name.charAt(0) == 'J'){\n        emit(p.name, p.friends[el].name);\n      }\n    }\n  }\n}",
+      "reduce": "function (keys, values, rereduce) {\n  return values;\n}"
+    }
+  },
+  "language": "javascript"
+}
